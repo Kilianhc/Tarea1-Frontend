@@ -1,113 +1,80 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
-import { FaTrash, FaCheck } from 'react-icons/fa'
+import { useState, useEffect } from 'react';
+import { fetchTodos, addTodo, updateTodo, deleteTodo } from './apiServices';
+import Cabecera from './Cabecera';
+import TaskCard from './TaskCard';
 
 function App() {
-  const [todos, setTodos] = useState([])
-  const [newTodo, setNewTodo] = useState('')
+  const [todos, setTodos] = useState([]);
+  const [newTodo, setNewTodo] = useState('');
 
   useEffect(() => {
-    fetchTodos()
-  }, [])
+    loadTodos();
+  }, []);
 
-  const fetchTodos = async () => {
+  const loadTodos = async () => {
     try {
-      const response = await axios.get('/api/todos')
-      setTodos(response.data)
+      const todosData = await fetchTodos();
+      setTodos(todosData);
     } catch (error) {
-      console.error('Error fetching todos:', error)
+      console.error(error.message);
     }
-  }
+  };
 
-  const addTodo = async (e) => {
-    e.preventDefault()
-    if (!newTodo.trim()) return
+  const handleAddTodo = async (e) => {
+    e.preventDefault();
+    if (!newTodo.trim()) return;
 
     try {
-      await axios.post('/api/todos', { text: newTodo, completed: false })
-      setNewTodo('')
-      fetchTodos()
+      await addTodo(newTodo);
+      setNewTodo('');
+      loadTodos();
     } catch (error) {
-      console.error('Error adding todo:', error)
+      console.error(error.message);
     }
-  }
+  };
 
-  const toggleTodo = async (id, completed) => {
+  const handleToggleTodo = async (id, completed) => {
     try {
-      await axios.put(`/api/todos/${id}`, { completed: !completed })
-      fetchTodos()
+      await updateTodo(id, !completed);
+      loadTodos();
     } catch (error) {
-      console.error('Error updating todo:', error)
+      console.error(error.message);
     }
-  }
+  };
 
-  const deleteTodo = async (id) => {
+  const handleDeleteTodo = async (id) => {
     try {
-      await axios.delete(`/api/todos/${id}`)
-      fetchTodos()
+      await deleteTodo(id);
+      loadTodos();
     } catch (error) {
-      console.error('Error deleting todo:', error)
+      console.error(error.message);
     }
-  }
+  };
+
+  const handleUpdateTodoDescription = async (id, description) => {
+    try {
+      const todoToUpdate = todos.find(todo => todo._id === id);
+      await updateTodo(id, todoToUpdate.completed, description);
+      loadTodos();
+    } catch (error) {
+      console.error(error.message);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
-      <div className="relative py-3 sm:max-w-xl sm:mx-auto">
-        <div className="relative px-4 py-10 bg-white mx-8 md:mx-0 shadow rounded-3xl sm:p-10">
-          <div className="max-w-md mx-auto">
-            <div className="divide-y divide-gray-200">
-              <div className="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-                <h1 className="text-3xl font-bold text-center mb-8">Todo App</h1>
-                <form onSubmit={addTodo} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTodo}
-                    onChange={(e) => setNewTodo(e.target.value)}
-                    placeholder="Añadir nueva tarea..."
-                    className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-                  />
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
-                  >
-                    Añadir
-                  </button>
-                </form>
-              </div>
-              <div className="pt-6 text-base leading-6 font-bold sm:text-lg sm:leading-7">
-                <ul className="space-y-4">
-                  {todos.map((todo) => (
-                    <li key={todo._id} className="flex items-center gap-4">
-                      <button
-                        onClick={() => toggleTodo(todo._id, todo.completed)}
-                        className={`flex-1 text-left p-3 rounded-lg ${
-                          todo.completed ? 'bg-green-100 line-through' : 'bg-gray-100'
-                        }`}
-                      >
-                        {todo.text}
-                      </button>
-                      <button
-                        onClick={() => toggleTodo(todo._id, todo.completed)}
-                        className="p-2 text-green-500 hover:text-green-600"
-                      >
-                        <FaCheck />
-                      </button>
-                      <button
-                        onClick={() => deleteTodo(todo._id)}
-                        className="p-2 text-red-500 hover:text-red-600"
-                      >
-                        <FaTrash />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-blue-500 py-6 flex flex-col justify-center sm:py-12"> {/* Cambia el color de fondo aquí */}
+      <div className="max-w-6xl mx-auto p-4 w-3/5"> {/* Establece el ancho al 60% */}
+        <Cabecera newTodo={newTodo} setNewTodo={setNewTodo} addTodo={handleAddTodo} />
+        <div className="pt-6">
+          <ul className="space-y-4">
+            {todos.map((todo) => (
+              <TaskCard key={todo._id} todo={todo} toggleTodo={handleToggleTodo} deleteTodo={handleDeleteTodo} updateTodoDescription={handleUpdateTodoDescription} />
+            ))}
+          </ul>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default App 
+export default App;
